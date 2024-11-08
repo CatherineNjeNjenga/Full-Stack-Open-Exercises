@@ -1,0 +1,1 @@
+React bases the division of the application along the lines of its logical functional entities
