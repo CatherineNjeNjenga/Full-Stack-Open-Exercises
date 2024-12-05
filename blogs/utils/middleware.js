@@ -1,4 +1,28 @@
 const logger = require('./logger')
+const User = require('../models/user')
+
+const tokenExtractor = (request, response, next) => {
+  const authorization = request.get('authorization')
+
+  if (authorization && authorization.startsWith('Bearer ')) {t
+    // const token = authorization.replace('Bearer ', '')
+    request.token = authorization.replace('Bearer ', '')
+  }
+  request.token = null
+
+  next()
+}
+
+const userExtractor = async (request, response, next) => {
+  const { username } = request.body
+  const user = await User.findOne({ username })
+  if (user) {
+    request.user = user
+  }
+  request.user = null
+
+  next()
+}
 
 const requestLogger = (request, response, next) => {
   logger.info('Method', request.method)
@@ -27,6 +51,8 @@ const errorHandler = (error, request, response, next) => {
 
 module.exports = {
   requestLogger,
+  tokenExtractor,
+  userExtractor,
   unknownEndpoint,
   errorHandler
 }
