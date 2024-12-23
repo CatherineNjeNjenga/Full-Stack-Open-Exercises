@@ -1,15 +1,22 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import Note from './components/Note'
+import LoginForm from './components/Login'
+import NoteForm from './components/NoteForm'
+import Togglable from './components/Toggable'
 import noteService from './services/notes'
+import loginService from './services/login'
 import './App.css'
 
 const App = () => {
   const [allNotes, setAllNotes] = useState([]);
   const [newNote, setNewNote] = useState('');
   const [showAll, setShowAll] = useState(true);
-  const [errorMessage, setErrorMessage] = useState('some error happened...')
-
+  const [errorMessage, setErrorMessage] = useState(null)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [user, setUser] = useState(null)
+ 
   useEffect(() => {
     noteService
     .getAll()
@@ -17,11 +24,61 @@ const App = () => {
       setAllNotes(initialNotes)
     })
   }, [])
+
+  useEffect(() => {
+    const loggedUserJSON = window.localStorage.getItem('loggedNoteappUser')
+    if (loggedUserJSON) {
+      const user = JSON.parse(loggedUserJSON)
+      setUser(user)
+      noteService.setToken(user.token)
+    }
+  }, [])
   
   const handleNoteChange = (event) => {
     console.log(event.target.value);
     setNewNote(event.target.value)
   };
+
+  const handleLogin = async (event) => {
+    event.preventDefault()
+
+    try {
+      const user = await loginService.login({
+        username, password,
+      })
+      console.log(user)
+
+      window.localStorage.setItem(
+        'loggedNoteappUser', JSON.stringify(user)
+      )
+
+      noteService.setToken(user.token)
+      setUser(user)
+      setUsername('')
+      setPassword('')
+    } catch (exception) {
+      setErrorMessage('wrong username or password')
+      setTimeout(() => {
+        setErrorMessage(null)
+      }, 5000);
+    }
+  }
+
+  const handleLogout = (event) => {
+    try {
+      const loggedUserJSON = window.localStorage.getItem('loggedNoteappUser')
+
+      if (loggedUserJSON) {
+        window.localStorage.removeItem( 'loggedNoteappUser')
+        setUser(null)
+        setUsername('')
+        setPassword('')
+      }
+    } catch (exception) {
+      console.log(exception.message)
+      setErrorMessage('wrong username or password')
+    }
+  }
   
   const addNote = (event) => {
     event.preventDefault();
@@ -95,6 +152,32 @@ const App = () => {
     <div>
       <h1>Notes</h1>
       <Notification message={errorMessage}/>
+      
+      {user === null ? 
+      <Togglable buttonLabel='login'>
+       <LoginForm 
+         handleSubmit={handleLogin}
+         handleUsernameChange={( {target } )=> setUsername(target.value)}
+         handlePasswordChange={({ target }) => setPassword(target.value)}
+         username={username}
+         password={password}
+       />
+     </Togglable>
+      : 
+      <div>
+        <p>{user.name} logged-in</p>
+        <button type='submit' onClick={handleLogout}>log out</button>
+        <Togglable buttonLabel='new note'>
+          <NoteForm 
+            onSubmit={addNote}
+            value={newNote}
+            handleChange={handleNoteChange}
+          />
+        </Togglable>
+      </div>
+      }
+
+      <h2>Notes</h2>
       <div>
         <button onClick={() => setShowAll(!showAll)}>
           show {showAll ? 'important': 'all'}
@@ -109,10 +192,7 @@ const App = () => {
           />
         )}
       </ul>
-      <form action="" onSubmit={addNote}>
-        <input value={newNote} onChange={handleNoteChange} />
-        <button type="submit" >save</button>
-      </form>
+      
       <Footer />
     </div>
   )
