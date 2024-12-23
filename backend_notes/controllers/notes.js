@@ -21,7 +21,7 @@ notesRouter.get('/:id', async (request, response) => {
 const getTokenFrom = request => {
   const authorization = request.get('authorization')
   if (authorization && authorization.startsWith('Bearer ')) {
-    return authorization.replace('Bearer', '')
+    return authorization.replace('Bearer ', '')
   }
   return null
 }
@@ -40,7 +40,7 @@ notesRouter.post('/', async (request, response) => {
   const note = new Note({
     content: body.content,
     important: body.important === undefined ? false : body.important,
-    user: user.id
+    user: user._id
   })
   
   const savedNote = await note.save()

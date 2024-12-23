@@ -1,5 +1,6 @@
 POST http://localhost:3001/api/notes
 Content-Type: application/json
+Authorization: Bearer token
 
 {
   "content": "Postman makes testing backend easy",

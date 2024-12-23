@@ -10,7 +10,7 @@ loginRouter.post('/', async (request, response) => {
 
   const passwordCorret = user === null
     ? false
-    : await bcrypt.compare(password, user.passwordHash)
+    : bcrypt.compare(password, user.passwordHash)
 
   if (!(user && passwordCorret)) {
     return response.status(401).json({
