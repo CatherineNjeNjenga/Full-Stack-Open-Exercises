@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react'
-import axios from 'axios'
+import { useState, useEffect, useRef } from 'react'
 import Note from './components/Note'
 import LoginForm from './components/Login'
 import NoteForm from './components/NoteForm'
@@ -10,7 +9,6 @@ import './App.css'
 
 const App = () => {
   const [allNotes, setAllNotes] = useState([]);
-  const [newNote, setNewNote] = useState('');
   const [showAll, setShowAll] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null)
   const [username, setUsername] = useState('')
@@ -34,11 +32,6 @@ const App = () => {
     }
   }, [])
   
-  const handleNoteChange = (event) => {
-    console.log(event.target.value);
-    setNewNote(event.target.value)
-  };
-
   const handleLogin = async (event) => {
     event.preventDefault()
 
@@ -80,22 +73,23 @@ const App = () => {
     }
   }
   
-  const addNote = (event) => {
-    event.preventDefault();
-    console.log('button clicked', event.target);
-    const noteObject = {
-      content: newNote,
-      important: Math.random() > 0.5,
-    };
+  const noteFormRef = useRef()
 
+  const addNote = (noteObject) => {
+    noteFormRef.current.toggleVisibility()
     noteService
       .create(noteObject)
       .then(returnedNote => {
         console.log(returnedNote);
         setAllNotes(allNotes.concat(returnedNote));
-        setNewNote('');
       })
-  };
+  }
+
+  const noteForm = () => (
+    <Togglable buttonLabel='new note' ref={noteFormRef}>
+      <NoteForm createNote={addNote} />
+    </Togglable>
+  )
 
   const toggleImportanceOf = (id) => {
     const note = allNotes.find(n => n.id === id)
@@ -167,13 +161,7 @@ const App = () => {
       <div>
         <p>{user.name} logged-in</p>
         <button type='submit' onClick={handleLogout}>log out</button>
-        <Togglable buttonLabel='new note'>
-          <NoteForm 
-            onSubmit={addNote}
-            value={newNote}
-            handleChange={handleNoteChange}
-          />
-        </Togglable>
+        {noteForm()}
       </div>
       }
 
